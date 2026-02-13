@@ -1,34 +1,51 @@
 # Smart Bookmark Manager
 
-A real-time bookmark manager built with Next.js 14 (App Router), Supabase, and Tailwind CSS.
+A real-time, secure bookmarking application built to demonstrate advanced full-stack capabilities with Next.js 14 and Supabase.
 
-**Live URL:** [🔖 SmartMarks](https://smart-bookmark-app-two-psi.vercel.app/)
+**Live URL:** [🔖 SmartMarks](https://smart-bookmark-app-two-psi.vercel.app)
+**Repo:** [code](https://github.com/kirtisingh05/smart-bookmark-app/tree/main)
 
-## Features
-- **Google OAuth Login:** Secure passwordless authentication.
-- **Private Bookmarks:** Users can only access and manage their own data.
-- **Real-time Updates:** Bookmarks appear instantly across tabs without refreshing.
-- **Responsive Design:** Styled with Tailwind CSS.
+---
 
-## Tech Stack
-- **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS
-- **Backend:** Supabase (PostgreSQL, Auth, Realtime)
-- **Deployment:** Vercel
+## 🚀 Features
+* **Google OAuth Authentication:** Secure, passwordless login flow.
+* **Real-time Synchronization:** Bookmarks appear instantly across tabs/devices using Supabase WebSockets (no page refresh).
+* **Row Level Security (RLS):** Database-level security ensuring users can strictly access only their own data.
+* **CRUD Operations:** Full ability to Create, Read, Update, and Delete bookmarks.
+* **Modern UI:** Responsive glassmorphism design using Tailwind CSS.
 
-## Challenges & Solutions
+## 🛠 Tech Stack
+* **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS
+* **Backend:** Supabase (PostgreSQL, Auth, Realtime)
+* **Deployment:** Vercel
 
-### 1. Handling Real-time Data Security
-**Problem:** Enabling Realtime on the `bookmarks` table initially broadcasted *all* database changes to every connected user. This meant User A could potentially receive an event when User B added a bookmark.
-**Solution:** I utilized PostgreSQL Row Level Security (RLS) policies.
-- I created a policy: `create policy "Enable access to own data" on bookmarks using (auth.uid() = user_id);`
-- In the frontend `supabase.channel` subscription, I added a filter: `filter: 'user_id=eq.${user.id}'`.
-This ensures the WebSocket only receives events relevant to the logged-in user.
+---
 
-### 2. Managing OAuth Redirects
-**Problem:** Google OAuth requires strict whitelisting of redirect URIs. The authentication flow worked locally (`localhost:3000`) but failed after deployment with a 400 error.
-**Solution:** - I configured Supabase "URL Configuration" to include both `localhost` and the production Vercel domain.
-- In the `signInWithOAuth` method, I used `window.location.origin` to dynamically determine the correct redirect URL based on the environment (Dev vs. Prod).
+## 🧠 Challenges & Solutions (Technical Deep Dive)
 
-### 3. Next.js App Router & Auth State
-**Problem:** Managing authentication state in the new App Router structure can be tricky between Server Components and Client Components.
-**Solution:** I created a dedicated `useClient` hook and wrapped the main dashboard logic in a `useEffect` that listens to `supabase.auth.onAuthStateChange`. This ensures the UI stays in sync if the user logs out or their session expires.
+### 1. Challenge: Securing Real-time Data
+**The Problem:** Initially, enabling "Realtime" on the `bookmarks` table broadcasted *every* change to *every* connected client. This meant User A could potentially receive an event when User B added a private bookmark, which is a massive privacy leak.
+
+**The Solution:** I implemented **Row Level Security (RLS)** policies in PostgreSQL.
+* I created a specific policy: `create policy "Enable access to own data" on bookmarks using (auth.uid() = user_id);`
+* On the frontend, I passed a filter to the subscription: `filter: 'user_id=eq.${user.id}'`.
+* This ensures the WebSocket channel only subscribes to events relevant to the authenticated user.
+
+### 2. Challenge: OAuth Redirects in Different Environments
+**The Problem:** Google OAuth requires a strict whitelist of redirect URIs. The authentication flow worked perfectly on `localhost`, but failed with a `400: redirect_uri_mismatch` error after deploying to Vercel because the production domain wasn't recognized.
+
+**The Solution:** * I configured the Supabase "URL Configuration" to accept both `localhost:3000` and the Vercel production domain.
+* I dynamically constructed the redirect URL in the code using `window.location.origin`, ensuring the app automatically uses the correct callback URL depending on whether it's running locally or in production.
+
+### 3. Challenge: Database Permission for Updates
+**The Problem:** While `SELECT` and `INSERT` worked fine, the "Edit" functionality was failing silently.
+
+**The Solution:** I realized Supabase denies `UPDATE` operations by default even if the user is logged in. I had to explicitly write a separate RLS policy (`Users can update own bookmarks`) that checks `auth.uid() = user_id` for both the `USING` (row selection) and `WITH CHECK` (new data validation) clauses.
+
+---
+
+## 📦 Local Setup
+
+1. Clone the repo:
+   ```bash
+   git clone https://github.com/kirtisingh05/smart-bookmark-app
