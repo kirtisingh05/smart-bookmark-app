@@ -2,7 +2,7 @@
 
 A real-time bookmark manager built with Next.js 14 (App Router), Supabase, and Tailwind CSS.
 
-**Live URL:** [INSERT YOUR VERCEL LINK HERE]
+**Live URL:** [LINK](https://smart-bookmark-app-two-psi.vercel.app/)]
 
 ## Features
 - **Google OAuth Login:** Secure passwordless authentication.
