@@ -1,36 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Smart Bookmark Manager
 
-## Getting Started
+A real-time bookmark manager built with Next.js 14 (App Router), Supabase, and Tailwind CSS.
 
-First, run the development server:
+**Live URL:** [INSERT YOUR VERCEL LINK HERE]
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Features
+- **Google OAuth Login:** Secure passwordless authentication.
+- **Private Bookmarks:** Users can only access and manage their own data.
+- **Real-time Updates:** Bookmarks appear instantly across tabs without refreshing.
+- **Responsive Design:** Styled with Tailwind CSS.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Tech Stack
+- **Frontend:** Next.js (App Router), TypeScript, Tailwind CSS
+- **Backend:** Supabase (PostgreSQL, Auth, Realtime)
+- **Deployment:** Vercel
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Challenges & Solutions
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Handling Real-time Data Security
+**Problem:** Enabling Realtime on the `bookmarks` table initially broadcasted *all* database changes to every connected user. This meant User A could potentially receive an event when User B added a bookmark.
+**Solution:** I utilized PostgreSQL Row Level Security (RLS) policies.
+- I created a policy: `create policy "Enable access to own data" on bookmarks using (auth.uid() = user_id);`
+- In the frontend `supabase.channel` subscription, I added a filter: `filter: 'user_id=eq.${user.id}'`.
+This ensures the WebSocket only receives events relevant to the logged-in user.
 
-## Learn More
+### 2. Managing OAuth Redirects
+**Problem:** Google OAuth requires strict whitelisting of redirect URIs. The authentication flow worked locally (`localhost:3000`) but failed after deployment with a 400 error.
+**Solution:** - I configured Supabase "URL Configuration" to include both `localhost` and the production Vercel domain.
+- In the `signInWithOAuth` method, I used `window.location.origin` to dynamically determine the correct redirect URL based on the environment (Dev vs. Prod).
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 3. Next.js App Router & Auth State
+**Problem:** Managing authentication state in the new App Router structure can be tricky between Server Components and Client Components.
+**Solution:** I created a dedicated `useClient` hook and wrapped the main dashboard logic in a `useEffect` that listens to `supabase.auth.onAuthStateChange`. This ensures the UI stays in sync if the user logs out or their session expires.
