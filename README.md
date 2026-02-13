@@ -49,3 +49,16 @@ A real-time, secure bookmarking application built to demonstrate advanced full-s
 1. Clone the repo:
    ```bash
    git clone https://github.com/kirtisingh05/smart-bookmark-app
+2. Install dependencies:
+   ```bash
+   npm install
+   Set up environment variables in .env.local:
+
+3. Code snippet
+   ```bash
+   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+4. Run the development server:
+   ```bash
+   npm run dev
+---
